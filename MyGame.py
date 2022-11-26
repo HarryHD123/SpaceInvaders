@@ -5,6 +5,8 @@ import pygame
 import random
 import time
 import shelve
+import os
+import sys
 
 # Initiate Game
 pygame.init()
@@ -31,12 +33,72 @@ SMALL_FONT = pygame.font.SysFont("monospace", 20)
 MED_FONT = pygame.font.SysFont("aettenschweiler", 50)
 LARGE_FONT = pygame.font.SysFont("aettenschweiler", 100)
 
+# Searches for HighScore folder
+def file_search():
+    file_name = "HighScores" # file to be searched
+    cur_dir = os.getcwd() # Dir from where search starts can be replaced with any path
+    File_Exists = False
+
+    file_list = os.listdir(cur_dir)
+    parent_dir = os.path.dirname(cur_dir)
+    if file_name in file_list:
+        print ("File Exists in: ", cur_dir)
+        File_Exists = True
+    else:
+        while True:
+            if cur_dir == parent_dir: #if dir is root dir
+                print ("File not found")
+                break
+            else:
+                cur_dir = parent_dir
+
+    return File_Exists
+
+# Allows game to be distributed
+def resource_path(relative_path, HS_ON=False):
+
+    if HS_ON: # If highscore file is found, uses that instead
+        Exists = file_search()
+        if Exists:
+            PATH = os.path.join(os.getcwd(), relative_path)
+        else:
+            PATH = os.path.join(sys._MEIPASS, relative_path)
+    else:
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        PATH = os.path.join(base_path, relative_path)
+
+    return PATH
+
 # Music
-PLACEHOLDER = "Sounds/SOUND PLACEHOLDER.WAV"
-FIRSTNOTE = "Sounds/SOUND FirstNote.WAV"
-SECONDNOTE = "Sounds/SOUND SecondNote.WAV"
-THIRDNOTE = "Sounds/SOUND ThirdNote.WAV"
-FOURTHNOTE = "Sounds/SOUND FourthNote.WAV"
+PLACEHOLDER = resource_path("Sounds/SOUND PLACEHOLDER.WAV")
+FIRSTNOTE = resource_path("Sounds/SOUND FirstNote.WAV")
+SECONDNOTE = resource_path("Sounds/SOUND SecondNote.WAV")
+THIRDNOTE = resource_path("Sounds/SOUND ThirdNote.WAV")
+FOURTHNOTE = resource_path("Sounds/SOUND FourthNote.WAV")
+PLAYERSHOOT = resource_path("Sounds/SOUND PlayerShoot.WAV")
+INVADERKILLED_SFX = resource_path("Sounds/SOUND InvaderKilled.WAV")
+PLAYERKILLED_SFX = resource_path("Sounds/SOUND PlayerKilled.WAV")
+
+# Images
+INVADER1 = resource_path("Images/IMG Invader1.png")
+INVADER2 = resource_path("Images/IMG Invader2.png")
+INVADER3 = resource_path("Images/IMG Invader3.png")
+INVADERKILLED = resource_path("Images/IMG InvaderKilled.png")
+PLAYER1 = resource_path("Images/IMG Player1.png")
+PLAYER1_EXPLODE = resource_path("Images/IMG Player1Explosion.png")
+PLAYER1_SHOOT = resource_path("Images/IMG Player1Shoot.png")
+PLAYER2 = resource_path("Images/IMG Player2.png")
+PLAYER2_EXPLODE = resource_path("Images/IMG Player2Explosion.png")
+PLAYER2_SHOOT = resource_path("Images/IMG Player2Shoot.png")
+PLAYER_LIFELOST = resource_path("Images/IMG PlayerLifeLost.png")
+
+# Highscores
+SINGLE_HS = resource_path('HighScores/HighScore.txt', True)
+MULTI_HS = resource_path('HighScores/MultiplayerHighScore.txt', True)
 
 # Shield Dimensions
 SHIELD_WIDTH = SCREEN_WIDTH / 80
@@ -61,7 +123,7 @@ class Player(pygame.sprite.Sprite):
 
     def Shoot(self):
         NewBullet = Bullet(self.rect.x + 23, self.rect.y, 12)
-        pygame.mixer.music.load("Sounds/SOUND PlayerShoot.WAV")
+        pygame.mixer.music.load(PLAYERSHOOT)
         pygame.mixer.music.play(1)
         self.image = self.image_shoot
         return NewBullet
@@ -148,7 +210,6 @@ class Bullet(pygame.sprite.Sprite):
 
 
 # ---FUNCTIONS---
-
 def TextObjects(Text, Font, Colour, Centre):
     TextSurface = Font.render(Text, True, Colour)
     TextSurface_rect = TextSurface.get_rect()
@@ -166,14 +227,15 @@ def DisplayImage(Image, Screen, x, y):
     Screen.blit(Image, (x, y))
 
 
-def UpdateHighScore(Score, HighScoreFile):
+def UpdateHighScore(Score, HighScoreFile, Reset=False):
     if "HighScore" in HighScoreFile:
         HighScore = HighScoreFile["HighScore"]
         if Score > HighScore:
             HighScoreFile["HighScore"] = Score
-            HighScoreFile.close()
-        else:
-            HighScoreFile.close()
+        elif Reset:
+            Score = 0
+            HighScoreFile["HighScore"] = Score
+        HighScoreFile.close()
 
 
 def SpawnInvaders(RowNumber, InvadersPerRow, ScoreValue, ShotFreq, Image):
@@ -216,51 +278,51 @@ def Levels(Level):
 
 # Levels here can be changed easily
 def Level1():
-    InvaderList = [SpawnInvaders(1, 11, 50, 3000, "Images/IMG Invader3.png"),
-                   SpawnInvaders(2, 11, 20, 5000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(3, 11, 20, 5000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(4, 11, 10, 7500, "Images/IMG Invader1.png"),
-                   SpawnInvaders(5, 11, 10, 7500, "Images/IMG Invader1.png")]
+    InvaderList = [SpawnInvaders(1, 11, 50, 3000, INVADER3),
+                   SpawnInvaders(2, 11, 20, 5000, INVADER2),
+                   SpawnInvaders(3, 11, 20, 5000, INVADER2),
+                   SpawnInvaders(4, 11, 10, 7500, INVADER1),
+                   SpawnInvaders(5, 11, 10, 7500, INVADER1)]
     # SpawnInvaders(RowNumber (From top to Bottom), InvadersPerRow, ScoreValue, ShotFreq (Lower = Higher Freq), Image)
     return InvaderList
 
 
 def Level2():
-    InvaderList = [SpawnInvaders(2, 11, 70, 2500, "Images/IMG Invader3.png"),
-                   SpawnInvaders(3, 11, 50, 3000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(4, 11, 50, 3000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(5, 11, 20, 5000, "Images/IMG Invader1.png"),
-                   SpawnInvaders(6, 11, 20, 5000, "Images/IMG Invader1.png")]
+    InvaderList = [SpawnInvaders(2, 11, 70, 2500, INVADER3),
+                   SpawnInvaders(3, 11, 50, 3000, INVADER2),
+                   SpawnInvaders(4, 11, 50, 3000, INVADER2),
+                   SpawnInvaders(5, 11, 20, 5000, INVADER1),
+                   SpawnInvaders(6, 11, 20, 5000, INVADER1)]
     # SpawnInvaders(RowNumber (From top to Bottom), InvadersPerRow, ScoreValue, ShotFreq (Lower = Higher Freq), Image)
     return InvaderList
 
 
 def Level3():
-    InvaderList = [SpawnInvaders(3, 10, 200, 1000, "Images/IMG Invader3.png"),
-                   SpawnInvaders(4, 10, 100, 2000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(5, 10, 100, 2000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(6, 10, 50, 3000, "Images/IMG Invader1.png"),
-                   SpawnInvaders(7, 10, 50, 3000, "Images/IMG Invader1.png")]
+    InvaderList = [SpawnInvaders(3, 10, 200, 1000, INVADER3),
+                   SpawnInvaders(4, 10, 100, 2000, INVADER2),
+                   SpawnInvaders(5, 10, 100, 2000, INVADER2),
+                   SpawnInvaders(6, 10, 50, 3000, INVADER1),
+                   SpawnInvaders(7, 10, 50, 3000, INVADER1)]
     # SpawnInvaders(RowNumber (From top to Bottom), InvadersPerRow, ScoreValue, ShotFreq (Lower = Higher Freq), Image)
     return InvaderList
 
 
 def Level4():
-    InvaderList = [SpawnInvaders(4, 8, 300, 500, "Images/IMG Invader3.png"),
-                   SpawnInvaders(5, 8, 200, 1000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(6, 8, 200, 1000, "Images/IMG Invader2.png"),
-                   SpawnInvaders(7, 8, 100, 2000, "Images/IMG Invader1.png"),
-                   SpawnInvaders(8, 8, 100, 2000, "Images/IMG Invader1.png")]
+    InvaderList = [SpawnInvaders(4, 8, 300, 500, INVADER3),
+                   SpawnInvaders(5, 8, 200, 1000, INVADER2),
+                   SpawnInvaders(6, 8, 200, 1000, INVADER2),
+                   SpawnInvaders(7, 8, 100, 2000, INVADER1),
+                   SpawnInvaders(8, 8, 100, 2000, INVADER1)]
     # SpawnInvaders(RowNumber (From top to Bottom), InvadersPerRow, ScoreValue, ShotFreq (Lower = Higher Freq), Image)
     return InvaderList
 
 
 def Level5():
-    InvaderList = [SpawnInvaders(5, 7, 500, 250, "Images/IMG Invader3.png"),
-                   SpawnInvaders(6, 7, 300, 500, "Images/IMG Invader2.png"),
-                   SpawnInvaders(7, 7, 300, 500, "Images/IMG Invader2.png"),
-                   SpawnInvaders(8, 7, 200, 1000, "Images/IMG Invader1.png"),
-                   SpawnInvaders(9, 7, 200, 1000, "Images/IMG Invader1.png")]
+    InvaderList = [SpawnInvaders(5, 7, 500, 250, INVADER3),
+                   SpawnInvaders(6, 7, 300, 500, INVADER2),
+                   SpawnInvaders(7, 7, 300, 500, INVADER2),
+                   SpawnInvaders(8, 7, 200, 1000, INVADER1),
+                   SpawnInvaders(9, 7, 200, 1000, INVADER1)]
     # SpawnInvaders(RowNumber (From top to Bottom), InvadersPerRow, ScoreValue, ShotFreq (Lower = Higher Freq), Image)
     return InvaderList
 
@@ -291,6 +353,7 @@ def SettingsLoop():
 
     # Working Variables (Do Not Adjust)
     Done = False
+    Play = False
 
     # --Settings Loop--
     while not Done:
@@ -303,29 +366,31 @@ def SettingsLoop():
         DisplayMessage("Press Enter to Start", MED_FONT, GREEN, SettingsScreen,
                        (SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 4))
 
-        DisplayImage("Images/IMG Invader3.png", SettingsScreen, SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 5)
-        DisplayImage("Images/IMG Invader2.png", SettingsScreen, SCREEN_WIDTH / 2 - SCREEN_WIDTH / 20,
+        DisplayImage(INVADER3, SettingsScreen, SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 5)
+        DisplayImage(INVADER2, SettingsScreen, SCREEN_WIDTH / 2 - SCREEN_WIDTH / 20,
                      SCREEN_HEIGHT - SCREEN_HEIGHT / 5)
-        DisplayImage("Images/IMG Invader1.png", SettingsScreen, SCREEN_WIDTH / 2 + SCREEN_WIDTH / 20,
+        DisplayImage(INVADER1, SettingsScreen, SCREEN_WIDTH / 2 + SCREEN_WIDTH / 20,
                      SCREEN_HEIGHT - SCREEN_HEIGHT / 5)
 
         # Displays Instructions and HighScore
-        if not TwoPlayer:
-            DisplayMessage("Use <- and -> to move. Click the space bar to shoot", SMALL_FONT, WHITE, SettingsScreen,
-                           (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3))
-            HighScoreFile = shelve.open("HighScores/HighScore.txt")
-            if "HighScore" in HighScoreFile:
-                DisplayMessage("HIGHSCORE:" + str(HighScoreFile["HighScore"]), MED_FONT, GREEN, SettingsScreen,
-                               (SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 3))
-            else:
-                HighScoreFile["HighScore"] = 0
         if TwoPlayer:
+            Multiplayer = "Activated"
             DisplayMessage("PLAYER 1: Use <- and -> to move and the UP key to shoot", SMALL_FONT, WHITE, SettingsScreen,
                            (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3))
             DisplayMessage("PLAYER 2: Use A and D to move and W to shoot", SMALL_FONT, WHITE,
                            SettingsScreen,
                            (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3 + SCREEN_HEIGHT / 20))
-            HighScoreFile = shelve.open("HighScores/MultiplayerHighScore.txt")
+            HighScoreFile = shelve.open(MULTI_HS)
+            if "HighScore" in HighScoreFile:
+                DisplayMessage("HIGHSCORE:" + str(HighScoreFile["HighScore"]), MED_FONT, GREEN, SettingsScreen,
+                               (SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 3))
+            else:
+                HighScoreFile["HighScore"] = 0
+        else:
+            Multiplayer = "Deactivated"
+            DisplayMessage("Use <- and -> to move. Click the space bar to shoot", SMALL_FONT, WHITE, SettingsScreen,
+                           (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3))
+            HighScoreFile = shelve.open(SINGLE_HS)
             if "HighScore" in HighScoreFile:
                 DisplayMessage("HIGHSCORE:" + str(HighScoreFile["HighScore"]), MED_FONT, GREEN, SettingsScreen,
                                (SCREEN_WIDTH / 2, SCREEN_HEIGHT - SCREEN_HEIGHT / 3))
@@ -334,12 +399,12 @@ def SettingsLoop():
 
         MultiplayerClickBox = pygame.Rect(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 20)
         MultiplayerClickBox.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-        if TwoPlayer:
-            Multiplayer = "Activated"
-        else:
-            Multiplayer = "Deactivated"
+        HighScoreResetBox = pygame.Rect(0, 0, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 20)
+        HighScoreResetBox.center = (SCREEN_WIDTH-(SCREEN_WIDTH / 6), SCREEN_HEIGHT-(SCREEN_HEIGHT / 12))
         DisplayMessage("Multiplayer Mode:" + Multiplayer, SMALL_FONT, WHITE, SettingsScreen,
                        (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+        DisplayMessage("Reset HighScore", SMALL_FONT, RED, SettingsScreen,
+                       (SCREEN_WIDTH-(SCREEN_WIDTH / 6), SCREEN_HEIGHT-(SCREEN_HEIGHT / 12)))
 
         for event in pygame.event.get():
             # quits game if X clicked in top corner
@@ -348,10 +413,19 @@ def SettingsLoop():
             if event.type == pygame.KEYDOWN:
                 if event.key == 13:  # 13 is the number of the enter key
                     Done = True
+                    Play = True
             if event.type == pygame.MOUSEBUTTONDOWN:
 
                 if MultiplayerClickBox.collidepoint(event.pos):
                     TwoPlayer = not TwoPlayer
+                if HighScoreResetBox.collidepoint(event.pos):   # Resets Highscore
+                    if TwoPlayer:
+                        HighScoreFile = shelve.open(MULTI_HS)
+                        UpdateHighScore(Score, HighScoreFile, True)
+                    else:
+                        HighScoreFile = shelve.open(SINGLE_HS)
+                        UpdateHighScore(Score, HighScoreFile, True)
+
 
         pygame.display.flip()
 
@@ -359,7 +433,7 @@ def SettingsLoop():
 
     return TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForInvaderUpdateX, InvaderSpeedUpIncrease, \
            InvaderShotFreqIncrease, Level, ExtraLifePerLevel, InvaderUpdateXSpeedUpPerLevel, \
-           InvaderSpeedUpIncreaseReductionPerY
+           InvaderSpeedUpIncreaseReductionPerY, Play
 
 
 def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForInvaderUpdateX, InvaderSpeedUpIncrease,
@@ -386,14 +460,14 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
     LevelUp = False
 
     # Player1 Created
-    Player1 = Player((SCREEN_WIDTH - 50) / 2, SCREEN_HEIGHT - 70, 'Images/IMG Player1.png',
-                     'Images/IMG Player1Shoot.png', 'Images/IMG Player1Explosion.png')
+    Player1 = Player((SCREEN_WIDTH - 50) / 2, SCREEN_HEIGHT - 70, PLAYER1,
+                     PLAYER1_SHOOT, PLAYER1_EXPLODE)
     PlayerList = [Player1]
 
     # Player2 Created if Multiplayer Selected
     if TwoPlayer:
-        Player2 = Player((SCREEN_WIDTH - 50) / 2, SCREEN_HEIGHT - 70, 'Images/IMG Player2.png',
-                         'Images/IMG Player2Shoot.png', 'Images/IMG Player2Explosion.png')
+        Player2 = Player((SCREEN_WIDTH - 50) / 2, SCREEN_HEIGHT - 70, PLAYER2,
+                         PLAYER2_SHOOT, PLAYER2_EXPLODE)
         PlayerList.append(Player2)
         LastShotTimeP2 = 0
         ReloadingP2 = False
@@ -574,9 +648,9 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                     Bullets.remove(Ammo)
                 # Plays invader killed sound, shows explosion and adds to overall score
                 for Enemy in InvaderKillList:
-                    pygame.mixer.music.load("Sounds/SOUND InvaderKilled.WAV")
+                    pygame.mixer.music.load(INVADERKILLED_SFX)
                     pygame.mixer.music.play(1)
-                    Enemy.image = pygame.image.load('Images/IMG InvaderKilled.png').convert()
+                    Enemy.image = pygame.image.load(INVADERKILLED).convert()
                     Score += Enemy.score
                 # Checks if a player bullet collides with a shield, removes the shield and bullet if it does
                 ShieldDamageFriendly = pygame.sprite.spritecollide(Ammo, ShieldList, True)
@@ -599,7 +673,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                     Lives -= 1
                     # Players Flash Red when a life is lost
                     for P in PlayerList:
-                        P.image = pygame.image.load('Images/IMG PlayerLifeLost.png').convert()
+                        P.image = pygame.image.load(PLAYER_LIFELOST).convert()
                 # Checks if an invader bullet collides with a shield, removes the shield and bullet if it does
                 ShieldDamage = pygame.sprite.spritecollide(Ammo, ShieldList, True)
                 if len(ShieldDamage) != 0:
@@ -612,7 +686,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
 
             # Game Over Protocol
             if Lives <= 0 or InvaderLanded:
-                pygame.mixer.music.load("Sounds/SOUND PlayerKilled.WAV")
+                pygame.mixer.music.load(PLAYERKILLED_SFX)
                 pygame.mixer.music.play(1)
                 for P in PlayerList:
                     P.Explode()
@@ -638,9 +712,9 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                            (SCREEN_WIDTH / 2, SCREEN_HEIGHT * 0.03))
 
             # Resets Player Image after shooting
-            Player1.image = pygame.image.load('Images/IMG Player1.png').convert()
+            Player1.image = pygame.image.load(PLAYER1).convert()
             if TwoPlayer:
-                Player2.image = pygame.image.load('Images/IMG Player2.png').convert()
+                Player2.image = pygame.image.load(PLAYER2).convert()
 
             # Removes Invader after it explodes
             for Enemy in InvaderKillList:
@@ -658,7 +732,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                            (SCREEN_WIDTH / 2, (SCREEN_HEIGHT / 2 - (SCREEN_HEIGHT / 3) + SCREEN_HEIGHT / 20)))
 
             if not TwoPlayer:
-                HighScoreFile = shelve.open("HighScores/HighScore.txt")
+                HighScoreFile = shelve.open(SINGLE_HS)
                 HighScore = HighScoreFile["HighScore"]
                 if Score > HighScore:
                     DisplayMessage("NEW HIGHSCORE SET!", MED_FONT, RED, GameScreen,
@@ -670,7 +744,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                                    (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
 
             if TwoPlayer:
-                HighScoreFile = shelve.open("HighScores/MultiplayerHighScore.txt")
+                HighScoreFile = shelve.open(MULTI_HS)
                 HighScore = HighScoreFile["HighScore"]
                 if Score > HighScore:
                     DisplayMessage("NEW HIGHSCORE SET!", MED_FONT, RED, GameScreen,
@@ -701,7 +775,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                                (SCREEN_WIDTH / 2, (SCREEN_HEIGHT / 2 - (SCREEN_HEIGHT / 3))))
 
             if not TwoPlayer:
-                HighScoreFile = shelve.open("HighScores/HighScore.txt")
+                HighScoreFile = shelve.open(SINGLE_HS)
                 HighScore = HighScoreFile["HighScore"]
                 if Score > HighScore:
                     DisplayMessage("NEW HIGHSCORE SET!", MED_FONT, WHITE, GameScreen,
@@ -713,7 +787,7 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
                                    (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
 
             if TwoPlayer:
-                HighScoreFile = shelve.open("HighScores/MultiplayerHighScore.txt")
+                HighScoreFile = shelve.open(MULTI_HS)
                 HighScore = HighScoreFile["HighScore"]
                 if Score > HighScore:
                     DisplayMessage("NEW HIGHSCORE SET!", MED_FONT, WHITE, GameScreen,
@@ -756,9 +830,9 @@ def GameLoop(TwoPlayer, Lives, Score, ReloadTime, MovementSensitivity, TimeForIn
 
 
 def MainLoop():
-    Play = True
     # Saves settings into a variable
     ChosenSettings = SettingsLoop()
+    Play = ChosenSettings[12]
     Level = ChosenSettings[8]
     Lives = ChosenSettings[1]
     Score = ChosenSettings[2]
@@ -774,11 +848,11 @@ def MainLoop():
         # Saves HighScore if a new one has been set
         Score = ContinueOptions[3]
         if not ChosenSettings[0]:
-            HighScoreFile = shelve.open("HighScores/HighScore.txt")
+            HighScoreFile = shelve.open(SINGLE_HS)
             UpdateHighScore(Score, HighScoreFile)
 
         if ChosenSettings[0]:
-            HighScoreFile = shelve.open("HighScores/MultiplayerHighScore.txt")
+            HighScoreFile = shelve.open(MULTI_HS)
             UpdateHighScore(Score, HighScoreFile)
 
         # Moves to the next level if the previous one has been completed has been completed
